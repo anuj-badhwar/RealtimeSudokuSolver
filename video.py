@@ -5,8 +5,8 @@ from Classfier import *
 from Sudoku import solve
 from Mnist import predictDigit
 from Mnist import loadModel
-show_border = True
-show_grids = True
+show_border = False
+show_grids = False
 show_solution = True
 
 def video_test():
@@ -24,21 +24,25 @@ def video_test():
     cached_solution = None
     reset = True
     while (cap.isOpened()):
-        ret, frame = cap.read()
-        recs = get_recs(frame)
+        ret, frame = cap.read() #Read frames from webcam
+        recs = get_recs(frame) #Extract ALL Rectangles
 
         if len(recs)>0:
             valid=False
             valid_rec = None
             for rec in recs:
                 digits_flag = []
+                print("Rec[0]",rec[0])
                 rot_mat = get_rot_matrix(rec[0], mapped_size, reverse=False)
                 mapped = cv2.warpPerspective(frame, rot_mat, mapped_size)
                 binary_mapped = preprocess_sudoku_grid(mapped)
-                binary_blocks = split_2_blocks(binary_mapped,9,9)
+                cv2.imshow("mapped",binary_mapped)
+                binary_blocks = split_2_blocks(binary_mapped,9,9) #Try to understand this function
                 for i, b in enumerate(binary_blocks):
                     cur_block = b.reshape(28,28)
-                    flag,centre = catch_digit_center(cur_block,(16,20))
+                    flag,centre = catch_digit_center(cur_block,(16,20)) #A bit complicated #Will explain tomm ==>
+                    cv2.imshow("center",centre)
+
                     cv2.imshow("center",centre)
                     digits_flag.append(flag)
                     if  flag:
@@ -124,22 +128,22 @@ def video_test():
         else:
             invalid_cnt += 1
             if invalid_cnt >= 3:
-                invalid_cnt = 3
+                invalid_cnt = 3 #To avoid integer overflow, 3 se bada hua to wapas 3 pe daldo
                 reset = True
                 #print "reset 3"
-                valid_cnt = 0
+                valid_cnt = 0 #sab kuch clear krdo kyuki beechmei ek invalid aagya hai
                 hist_digits_flag = []
                 block_to_centre.clear()
                 cached_solution = None
                 cached_digits_flag = None
             cv2.imshow('frame', frame)
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord('q'): #Q dabaya to come out of loop
             break
 
-    # When everything done, release the capture
+    # When everything done, release the capture and close all videos
     cap.release()
-    cv2.destroyAllWindows()
+    cv2.destroyAllWindows() #QUIITTT BCCCCCC!!!!!!
 
 if __name__ == "__main__":
     video_test()

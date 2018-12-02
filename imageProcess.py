@@ -35,20 +35,21 @@ def get_recs(ori_img):
     w,h = get_size(ori_img)
     img_area = w*h
     thres = img_area/8.0
-    bi_img = cv2.cvtColor(ori_img, cv2.COLOR_BGR2GRAY)
-    th2 = cv2.GaussianBlur(bi_img, (3, 3), 0, 0)
+    bi_img = cv2.cvtColor(ori_img, cv2.COLOR_BGR2GRAY) #Convert RGB colored image to Grayscale
+    th2 = cv2.GaussianBlur(bi_img, (3, 3), 0, 0) #Blur Image => Reduces Noise
     kernel = np.ones((2, 2), np.uint8)
-    th2 = cv2.morphologyEx(th2, cv2.MORPH_OPEN, kernel)
+    th2 = cv2.morphologyEx(th2, cv2.MORPH_OPEN, kernel) #Erosion followed by Dilation
     th2 = cv2.adaptiveThreshold(th2, 255, cv2.ADAPTIVE_THRESH_MEAN_C, \
-                                cv2.THRESH_BINARY_INV, 11, 0)
+                                cv2.THRESH_BINARY_INV, 11, 0) #Every local 11x11 region ==> its own
+                                                                #threshold value ==> Mean of neighbourhood(11x11)
     th2 = cv2.morphologyEx(th2, cv2.MORPH_OPEN, kernel)
     _, contours0, hierarchy = cv2.findContours(th2, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-    approximations = [cv2.approxPolyDP(ctr,15,True) for ctr in contours0]
-    approximations_filter = [app for app in approximations if len(app)==4 and cv2.isContourConvex(app)]
-    rectangles_area = [cv2.contourArea(app) for app in approximations_filter ]
-    pair = zip(approximations_filter,rectangles_area)
-    pair = [p for p in pair if p[1]>thres]
-    pair.sort(key=lambda x:x[1],reverse=True)
+    approximations = [cv2.approxPolyDP(ctr,15,True) for ctr in contours0] #Approximate the polygon shape
+    approximations_filter = [app for app in approximations if len(app)==4 and cv2.isContourConvex(app)] #Filter polygons with 4 sides
+    rectangles_area = [cv2.contourArea(app) for app in approximations_filter ] #Find area of each filtered
+    pair = zip(approximations_filter,rectangles_area) #Har polygon ko uske area ke sath pair up
+    pair = [p for p in pair if p[1]>thres] #threshold se kam area discard krdo
+    pair.sort(key=lambda x:x[1],reverse=True) #Decreasing order mei sort krdo
     return pair
 
 
@@ -145,6 +146,8 @@ def catch_digit_center(bin_img_block, digit_bound_size):
         left_top_y = int(np.round((28 - digit_bound_size[1])/2.0))
         digit_center = np.zeros((28,28))
         digit_center[left_top_y:left_top_y+digit_bound_size[1], left_top_x:left_top_x+digit_bound_size[0]] = digit
+        # cv2.imshow("digit",digit_center)
+        # cv2.waitKey(0)
         return True, digit_center
 
 
